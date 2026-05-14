@@ -2,24 +2,85 @@
 <html>
 <head>
   <title>Neha's Budget Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
       font-family: Arial, sans-serif;
       background: #f7f9fc;
-      padding: 30px;
+      padding: 28px;
       color: #111827;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    h1 { margin: 0; font-size: 30px; }
+
+    .reset {
+      background: white;
+      color: #e11d48;
+      border: 1px solid #fecdd3;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: bold;
     }
 
     .card {
       background: white;
       padding: 24px;
       border-radius: 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      margin-bottom: 22px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    }
+
+    .overview {
+      border: 1px solid #bfdbfe;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      align-items: center;
+    }
+
+    .metric {
+      border-right: 1px solid #e5e7eb;
+      padding-right: 18px;
+    }
+
+    .metric:last-child { border-right: none; }
+
+    .label {
+      color: #4b5563;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .value {
+      font-size: 26px;
+      font-weight: bold;
+      color: #0b5cff;
+    }
+
+    .green { color: #15803d; }
+    .red { color: #dc2626; }
+    .purple { color: #7c3aed; }
+
+    .log-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      align-items: end;
     }
 
     input, button {
-      padding: 12px;
+      width: 100%;
+      padding: 14px;
       border-radius: 10px;
       border: 1px solid #ccc;
       font-size: 16px;
@@ -30,11 +91,39 @@
       color: white;
       border: none;
       cursor: pointer;
+      font-weight: bold;
     }
 
-    button:hover {
-      background: #004ee0;
+    .summary-box {
+      margin-top: 24px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 14px;
+      padding: 22px;
     }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      gap: 20px;
+    }
+
+    .mini-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .mini-card {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
+    }
+
+    .mini-card h3 { margin-top: 0; }
 
     table {
       width: 100%;
@@ -43,53 +132,147 @@
     }
 
     th, td {
-      padding: 12px;
+      padding: 14px;
       border-bottom: 1px solid #ddd;
       text-align: center;
     }
 
-    th {
-      background: #eef4ff;
+    th { background: #eef4ff; }
+
+    .today-row {
+      background: #eff6ff;
+      font-weight: bold;
+      color: #0b5cff;
     }
 
-    .error {
-      color: red;
+    #message {
+      margin-top: 14px;
       font-weight: bold;
-      margin-top: 10px;
     }
 
-    .success {
-      color: green;
-      font-weight: bold;
-      margin-top: 10px;
+    .success { color: green; }
+    .error { color: red; }
+
+    .footer {
+      text-align: center;
+      color: #6b7280;
+      margin-top: 30px;
+    }
+
+    @media (max-width: 800px) {
+      .overview, .log-grid, .mini-cards, .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      body { padding: 16px; }
+
+      table { font-size: 13px; }
     }
   </style>
 </head>
 
 <body>
 
-  <h1>💙 Neha's Budget Tracker</h1>
+  <div class="header">
+    <h1>💙 Neha's Budget Tracker</h1>
+    <button class="reset" onclick="alert('Reset can be added later')">⏱ Reset Data</button>
+  </div>
 
-  <div class="card">
-    <h2>Log Spending</h2>
+  <div class="card overview">
+    <div class="metric">
+      <div class="label">Total Budget</div>
+      <div class="value" id="totalBudget">$0.00</div>
+    </div>
 
-    <label>Select Date</label><br>
-    <input type="date" id="date"><br><br>
+    <div class="metric">
+      <div class="label">Date Range</div>
+      <div class="value" style="font-size:18px;color:#111827;" id="dateRange">Loading...</div>
+      <div class="label" id="totalDays"></div>
+    </div>
 
-    <label>Amount Spent</label><br>
-    <input type="number" id="spent" placeholder="0" step="0.01"><br><br>
+    <div class="metric">
+      <div class="label">Daily Budget</div>
+      <div class="value" id="dailyBudget">$0.00</div>
+      <div class="label">per day</div>
+    </div>
 
-    <label>Remarks</label><br>
-    <input type="text" id="remarks" placeholder="Fuel, groceries, coffee, etc."><br><br>
+    <div class="metric">
+      <div class="label">Days Completed</div>
+      <div class="value green" id="daysCompleted">0 / 0</div>
+      <div class="label" id="percentDone">0%</div>
+    </div>
 
-    <button onclick="saveEntry()">Save Entry</button>
-
-    <div id="message"></div>
+    <div>
+      <div class="value green" id="circlePercent">0%</div>
+      <div class="label">progress</div>
+    </div>
   </div>
 
   <div class="card">
-    <h2>Spending History</h2>
+    <h2>📅 Log Today's Spending</h2>
 
+    <div class="log-grid">
+      <div>
+        <label>Select Date</label><br>
+        <input type="date" id="date">
+      </div>
+
+      <div>
+        <label>How much did you spend today?</label><br>
+        <input type="number" id="spent" placeholder="0" step="0.01">
+      </div>
+
+      <div>
+        <label>Remarks</label><br>
+        <input type="text" id="remarks" placeholder="Fuel, groceries, coffee, etc.">
+      </div>
+    </div>
+
+    <br>
+    <button onclick="saveEntry()">💾 Save Entry</button>
+    <div id="message"></div>
+
+    <div class="summary-box">
+      <h3 id="summaryTitle">Summary</h3>
+      <div class="summary-grid">
+        <div>
+          <div class="label">Daily Budget</div>
+          <div class="value green" id="summaryBudget">$0.00</div>
+        </div>
+        <div>
+          <div class="label">Spent Today</div>
+          <div class="value red" id="summarySpent">$0.00</div>
+        </div>
+        <div>
+          <div class="label">Remaining Today</div>
+          <div class="value green" id="summaryRemaining">$0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mini-cards">
+    <div class="mini-card">
+      <h3>📈 Total Saved So Far</h3>
+      <div class="value green" id="totalSaved">$0.00</div>
+      <p>You're doing great!</p>
+    </div>
+
+    <div class="mini-card">
+      <h3>🐷 Total Spent So Far</h3>
+      <div class="value" id="totalSpent">$0.00</div>
+      <p>Keep tracking!</p>
+    </div>
+
+    <div class="mini-card">
+      <h3>⚖️ Running Balance</h3>
+      <div class="value purple" id="runningBalance">$0.00</div>
+      <p id="balanceNote">Ahead by $0.00</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 Spending History</h2>
     <table>
       <thead>
         <tr>
@@ -105,42 +288,105 @@
     </table>
   </div>
 
+  <div class="footer">
+    Stay consistent, save more, and reach your goals! 💪
+  </div>
+
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwHZNuSLMtMRHoPZEAkOYzDXIsJI7U5rLl9Cx_ZRsgKYROUSWuEUJMIaL0dczWyvqvi/exec";
 
+let allData = [];
+
 function money(value) {
-  if (value === "" || value === null || value === undefined) return "";
-  return "$" + Number(value).toFixed(2);
+  if (value === "" || value === null || value === undefined) return "$0.00";
+  return "$" + Number(value || 0).toFixed(2);
+}
+
+function todayInputFormat() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function formatReadableDate(dateString) {
+  const date = new Date(dateString + "T00:00:00");
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
 async function loadData() {
   const message = document.getElementById("message");
-  const table = document.getElementById("history");
 
   try {
     const response = await fetch(API_URL);
     const data = await response.json();
+    allData = data;
 
-    table.innerHTML = "";
-
-    data.forEach(row => {
-      table.innerHTML += `
-        <tr>
-          <td>${row.DateDisplay || row.Date || ""}</td>
-          <td>${money(row["Daily Budget"])}</td>
-          <td>${money(row.Spent || 0)}</td>
-          <td>${row.Remarks || ""}</td>
-          <td>${money(row.Remaining)}</td>
-          <td>${money(row["Running Balance"])}</td>
-        </tr>
-      `;
-    });
+    renderDashboard(data);
+    renderTable(data);
 
   } catch (error) {
-    table.innerHTML = "";
     message.className = "error";
     message.innerText = "Could not load data. Check Apps Script deployment.";
   }
+}
+
+function renderDashboard(data) {
+  if (!data.length) return;
+
+  const first = data[0];
+  const last = data[data.length - 1];
+
+  const totalBudget = data.reduce((sum, row) => sum + Number(row["Daily Budget"] || 0), 0);
+  const totalSpent = data.reduce((sum, row) => sum + Number(row.Spent || 0), 0);
+
+  const today = todayInputFormat();
+  let selectedDate = document.getElementById("date").value || today;
+  document.getElementById("date").value = selectedDate;
+
+  let selectedRow = data.find(row => row.Date === selectedDate) || data[0];
+
+  const daysCompleted = data.filter(row => row.Date <= today).length;
+  const percentage = Math.round((daysCompleted / data.length) * 100);
+
+  const runningBalance = selectedRow["Running Balance"] || 0;
+
+  document.getElementById("totalBudget").innerText = money(totalBudget);
+  document.getElementById("dateRange").innerText = `${first.DateDisplay} - ${last.DateDisplay}`;
+  document.getElementById("totalDays").innerText = `(${data.length} days)`;
+  document.getElementById("dailyBudget").innerText = money(first["Daily Budget"]);
+  document.getElementById("daysCompleted").innerText = `${daysCompleted} / ${data.length}`;
+  document.getElementById("percentDone").innerText = `${percentage}%`;
+  document.getElementById("circlePercent").innerText = `${percentage}%`;
+
+  document.getElementById("summaryTitle").innerText = `Summary for ${formatReadableDate(selectedRow.Date)}`;
+  document.getElementById("summaryBudget").innerText = money(selectedRow["Daily Budget"]);
+  document.getElementById("summarySpent").innerText = money(selectedRow.Spent || 0);
+  document.getElementById("summaryRemaining").innerText = money(selectedRow.Remaining);
+
+  document.getElementById("totalSpent").innerText = money(totalSpent);
+  document.getElementById("totalSaved").innerText = money(runningBalance);
+  document.getElementById("runningBalance").innerText = money(runningBalance);
+  document.getElementById("balanceNote").innerText = `Ahead by ${money(runningBalance)}`;
+}
+
+function renderTable(data) {
+  const table = document.getElementById("history");
+  const selectedDate = document.getElementById("date").value;
+
+  table.innerHTML = "";
+
+  data.forEach(row => {
+    const rowClass = row.Date === selectedDate ? "today-row" : "";
+
+    table.innerHTML += `
+      <tr class="${rowClass}">
+        <td>${row.DateDisplay || row.Date || ""}</td>
+        <td>${money(row["Daily Budget"])}</td>
+        <td>${money(row.Spent || 0)}</td>
+        <td>${row.Remarks || ""}</td>
+        <td>${money(row.Remaining)}</td>
+        <td>${money(row["Running Balance"])}</td>
+      </tr>
+    `;
+  });
 }
 
 async function saveEntry() {
@@ -158,11 +404,7 @@ async function saveEntry() {
   try {
     const response = await fetch(API_URL, {
       method: "POST",
-      body: JSON.stringify({
-        date: date,
-        spent: spent,
-        remarks: remarks
-      })
+      body: JSON.stringify({ date, spent, remarks })
     });
 
     const result = await response.json();
@@ -172,7 +414,7 @@ async function saveEntry() {
       message.innerText = "Saved successfully!";
       document.getElementById("spent").value = "";
       document.getElementById("remarks").value = "";
-      loadData();
+      await loadData();
     } else {
       message.className = "error";
       message.innerText = result.message || "Something went wrong.";
@@ -183,6 +425,11 @@ async function saveEntry() {
     message.innerText = "Could not save. Check Apps Script deployment.";
   }
 }
+
+document.getElementById("date").addEventListener("change", () => {
+  renderDashboard(allData);
+  renderTable(allData);
+});
 
 loadData();
 </script>
